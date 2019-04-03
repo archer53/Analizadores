@@ -1,0 +1,182 @@
+/*----------------------------------------------------------------------------
+--------------------- 1ra. Area: Codigo de Usuario
+----------------------------------------------------------------------------*/
+
+//-------> Importaciones 
+//-------> Paquetes 
+ 
+
+package Analizadores;
+
+import java_cup.runtime.Symbol;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.logging.Logger;
+import java.io.IOException;
+
+//-------> Codigo para el parser, variables, metodos
+
+parser code
+{:  
+
+    public static LinkedList<AcepErr> TablaErr=new LinkedList<AcepErr>();
+    //Metodo al que se llama automaticamente ante algun error sintactico
+    public void syntax_error(Symbol s)
+    {  
+        Archivos archivo = new Archivos();      
+        String lexema = s.value.toString();
+        int fila = s.right;
+        int columna = s.left;
+        
+        System.out.println("!!!!!!! Error Sintactico Recuperado !!!!!!!");
+        System.out.println("\t\tLexema: "+lexema);
+        System.out.println("\t\tFila: "+fila);
+        System.out.println("\t\tColumna: "+columna);
+        try {
+         archivo.escribirErrorSintactico("Error Sintactico "+"token: "+lexema+" "+"fila: "+fila+" "+ "Columna: "+columna);
+     } catch (IOException ex) {
+         Logger.getLogger("No se pudo realizar la escritura en el archivo");
+        }
+                
+        //lista_errores.add(new ErrorT(lexema, fila, columna,"sintactico" ,"Simbolo no esperado"));
+        AcepErr datos =new AcepErr(lexema, "ERROR SINTACTICO" ,fila,columna,"Simbolo no esperado");
+            TablaErr.add(datos);
+    }
+
+    //Metodo al que se llama en el momento en que ya no es posible una recuperacion de errores
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception
+    {        
+        String lexema = s.value.toString();
+        int fila = s.right;
+        int columna = s.left;
+        
+        System.out.println("!!!!!!! Error Sintactico, Panic Mode !!!!!!! ");
+        System.out.println("\t\tLexema: "+lexema);
+        System.out.println("\t\tFila: "+fila);
+        System.out.println("\t\tColumna: "+columna);
+
+       AcepErr datos =new AcepErr(lexema, "ERROR SINTACTICO" ,fila,columna,"Simbolo no esperado Error Fatal");
+                   TablaErr.add(datos);
+
+        //lista_errores.add(new ErrorT(lexema, fila, columna,"sintactico" ,"Simbolo no esperado, Panic Mode"));
+    }
+
+    public void semantic(Symbol cur_token, String n) 
+    {
+        System.out.println("error semantico ");
+    }
+
+    public void semantic(String msg, Object obj) {}
+
+:}
+
+
+//-------> Codigo para las acciones gramaticales
+
+action code
+{:
+//METODOS Y VARIABLES QUE SOLO PUEDEN SER ACCEDIDAS DENTRO DEL PARSER
+int exponente(int exp){
+int resultado= 1;
+for(int i=1; i<exp; i++){
+resultado = resultado *2;
+}
+return resultado;
+}
+
+:}  
+
+
+
+/*----------------------------------------------------------------------------
+--------------------- 2da. Area: Declaraciones
+----------------------------------------------------------------------------*/
+
+//-------> Simbolos
+terminal coma, punto, puntocoma;
+terminal apar, cpar;
+
+//-------> Operadores
+terminal uno_o_mas,cero_o_mas,or,cero_o_uno;
+
+//-------> Reservadas del sistem
+terminal MAIN,FIN,DEF,AF,ER,AFND,agregarEstados,agregarAlfabeto,agregarTransicion;
+terminal complemento,union,interseccion,diferencia,ERaAFND;
+terminal ERaAFD,reverso,EstadoInicial,EstadoFinal,graficar,minimizacion,agregarexpresion,concatenacion,cerradura;
+terminal id;
+
+non terminal INICIO, VARIABLES,OPERACIONES,VAR,VARB,TIPO,OPER,ESTADOS,ESTADOSB,B, TRANSICION, TRANSICIONA;
+non terminal ALFABETO,ALFABETOB,E, TR, OU, FR;
+
+
+
+
+
+
+start with INICIO;
+
+
+/*-------------------------------------------------------------------
+--------------------- 3ra. y ultima area: Reglas Sintacticas
+-------------------------------------------------------------------*/
+INICIO::= MAIN VARIABLES OPERACIONES FIN
+    | MAIN VARIABLES FIN
+    ;
+
+VARIABLES::= DEF  VAR puntocoma;
+
+VAR ::= TIPO id  VARB;
+
+
+VARB::= coma  TIPO id VARB
+    |;
+
+TIPO::= AF| ER | AFND;
+
+OPERACIONES ::=   OPER OPERACIONES  | OPER;
+
+OPER ::= id punto B;
+B ::=  agregarAlfabeto apar ALFABETO cpar puntocoma  
+       id punto agregarEstados apar ESTADOS cpar puntocoma 
+       id punto EstadoInicial apar id cpar puntocoma 
+       id punto EstadoFinal apar ESTADOS cpar puntocoma |
+         agregarTransicion apar id coma apar  TRANSICION cpar coma id cpar puntocoma |       
+         complemento apar cpar puntocoma |
+         union apar id cpar puntocoma |
+         interseccion apar id cpar puntocoma |
+         diferencia apar id cpar puntocoma |
+         reverso apar cpar puntocoma |
+         graficar apar cpar puntocoma |
+         minimizacion apar cpar puntocoma |
+         agregarexpresion apar E cpar puntocoma |
+         concatenacion apar id cpar puntocoma |
+         ERaAFND apar cpar puntocoma |
+         ERaAFD  apar cpar puntocoma |
+         cerradura apar cpar puntocoma;
+
+
+
+ALFABETO ::= id ALFABETOB;
+ALFABETOB ::= coma id ALFABETOB |;
+
+ESTADOS ::= id ESTADOSB;
+ESTADOSB ::= coma id ESTADOSB |;
+
+TRANSICION ::= id TRANSICIONA;
+TRANSICIONA ::= coma id TRANSICIONA |;
+
+E ::= E or TR|
+      TR|
+      E OU;
+TR ::= TR punto FR | 
+       FR;
+
+FR ::= id | apar E cpar OU;
+
+OU ::= uno_o_mas | cero_o_mas | cero_o_uno;
+
+
+
+
+
+
